@@ -29,39 +29,56 @@ var senseD3 = {
     //create arrays of parents and children.  this is so we can determine if there's any nodes without parents.  these would be the top parents
     var parentsA = [];
     var kidsA = [];
+
     //format Sense data into a more easily consumable format and build the parent/child arrays
 
     var happyData = [];
+
     for (s in dataSet) {
       var d = dataSet[s];
+      var parentPath = "[root]"; // Initialize parentPath as [root] for the level under root
+
       for (i = 0; i < numDims - 1; i++) {
         if (parentsA.indexOf(d[i].qText) === -1) {
           parentsA.push(d[i].qText);
         }
+
         var parentVal = "";
-        if (!d[i].qText || d[i].qText == "-" || d[i].qText == "" || d[i].qText == " ") {
+        if (!d[i].qText || d[i].qText === "-" || d[i].qText === "" || d[i].qText === " ") {
           parentVal = "[root]";
         } else {
           parentVal = d[i].qText;
         }
+
         if (kidsA.indexOf(d[i + 1].qText) === -1) {
           kidsA.push(d[i + 1].qText);
         }
+
         var exists = false;
         $.each(happyData, function () {
-          if (this.parent == parentVal && this.name == d[i + 1].qText) {
+          if (this.parent === parentVal && this.name === d[i + 1].qText) {
             exists = true;
           }
         });
+
         if (!exists) {
+          var newPath = parentPath + " > " + parentVal + " > " + d[i + 1].qText;
+          if (parentVal === "[root]") {
+            newPath = parentVal + " > " + d[i + 1].qText;
+          }
+
           var newDataSet = {
             name: d[i + 1].qText,
             parent: parentVal,
             size: d[numDims].qNum,
             leaf: i + 1 === numDims - 1 ? true : false,
+            parentpath: newPath, // Update parentpath to include complete path
           };
           happyData.push(newDataSet);
         }
+
+        // Update parentPath for the next iteration
+        parentPath += " > " + parentVal;
       }
     }
 
@@ -77,31 +94,59 @@ var senseD3 = {
     });
 
     //crawl through the data to create the family tree in JSON
-    function getChildren(name) {
-      return happyData
+    function getChildren(inputData, name = "[root]", parentPath = null, parentSize = 0) {
+      var children = inputData
         .filter(function (d) {
+          if (d.leaf) {
+            console.log("leaf is: " + JSON.stringify(d, null, "\t"));
+          }
+          if (d.parentpath === parentPath + " > " + d.parent) {
+            return d.parentpath === parentPath + " > " + d.parent;
+          } else {
+            return d.parent === name;
+          }
+          // return d.parentpath === parentPath + " > " + name;
           return d.parent === name;
         })
         .map(function (d) {
           var mapping;
+          if (parentPath == null) {
+            parentPath = "[root]";
+          }
           if (d.leaf) {
             mapping = {
+              id: parentPath + " > " + d.name,
               name: d.name,
               size: d.size,
+              totalsize: d.size,
             };
           } else {
+            var childSize = d.size;
+
+            var childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
+
+            var totalSize = childChildren.reduce(function (acc, child) {
+              return acc + child.totalsize;
+            }, 0);
+
             mapping = {
+              id: parentPath + " > " + d.name,
+              //  id: parentPath + "|" + d.name,
               name: d.name,
-              size: d.size,
-              children: getChildren(d.name),
+              size: childSize,
+              totalsize: totalSize + parentSize,
+              children: childChildren,
             };
           }
 
           return mapping;
         });
+
+      return children;
     }
 
-    var JSONtree = getChildren("[root]");
+    var JSONtree = getChildren(happyData);
+    console.log(JSONtree);
     return JSONtree;
   },
   // Traverse the dataset to find the maximum value of a

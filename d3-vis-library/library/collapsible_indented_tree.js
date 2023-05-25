@@ -108,7 +108,7 @@ var viz = function ($element, layout, _this) {
       .attr("dy", 3.5)
       .attr("dx", 5.5)
       .text(function (d) {
-        return d.name;
+        return d.size + " - " + d.name;
       });
 
     // Transition nodes to their new position.
