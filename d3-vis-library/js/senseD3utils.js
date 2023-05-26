@@ -25,57 +25,56 @@ var senseD3 = {
     if (arguments.length == 1) {
       numDims = 2;
     }
-    //console.log(dataSet);
-    var parentsA = [];
-    var kidsA = [];
-    var happyData = [];
+    var parentsA = []; // Array to store unique parent values
+    var kidsA = []; // Array to store unique child values
+    var formattedData = []; // Array to store the formatted data
 
     for (var i = 0; i < dataSet.length; i++) {
-      var d = dataSet[i]; //the current node
-      var parentPath = "[root]";
+      var d = dataSet[i]; // Current node
+
+      var parentPath = "[root]"; // Initialize parentPath as [root] for the level under root
 
       for (var j = 0; j < numDims - 1; j++) {
-        //Goes through the dimensions except for final level and measure
+        // Iterate through the dimensions except for the final level and measure
+
         var parentVal = "";
         if (!d[j].qText || d[j].qText === "-" || d[j].qText === "" || d[j].qText === " ") {
-          parentVal = "[root]";
+          parentVal = "[root]"; // Set parent value as [root] if it is empty or contains special characters
         } else {
-          parentVal = d[j].qText;
+          parentVal = d[j].qText; // Set parent value as the current dimension value
         }
 
-        var childVal = d[j + 1].qText; //eventually gets the final level but not the measure
+        var childVal = d[j + 1].qText; // Get the value of the next dimension (child value)
 
         if (!parentsA.includes(parentVal)) {
-          parentsA.push(parentVal);
+          parentsA.push(parentVal); // Add parent value to the parentsA array if it doesn't exist already
         }
 
         if (!kidsA.includes(childVal)) {
-          kidsA.push(childVal);
+          kidsA.push(childVal); // Add child value to the kidsA array if it doesn't exist already
         }
 
-        const exists = happyData.some((item) => item.parent === parentVal && item.name === childVal);
-
-        if (!exists) {
-          var newPath = parentPath + " > " + parentVal; // + " > " + childVal;
-          if (parentVal === "[root]") {
-            newPath = parentVal; // + " > " + childVal;
-          }
-
-          var newDataSet = {
-            name: childVal,
-            parent: parentVal,
-            size: d[numDims].qNum,
-            leaf: j + 1 === numDims - 1,
-            parentpath: newPath,
-          };
-          happyData.push(newDataSet);
+        var newPath = parentPath + " > " + parentVal; // Construct the complete path including parent and child values
+        if (parentVal === "[root]") {
+          newPath = parentVal; // Special case: if parent is [root], exclude it from the path
         }
-        parentPath += " > " + parentVal;
+
+        var newDataSet = {
+          name: childVal,
+          parent: parentVal,
+          size: d[numDims].qNum, // Assign size as the value of the measure in the last dimension
+          leaf: j + 1 === numDims - 1, // Determine if it is a leaf node (last dimension)
+          parentpath: newPath, // Update parentpath to include the complete path
+        };
+
+        formattedData.push(newDataSet); // Add the new formatted data entry to formattedData
+
+        parentPath = newPath; // Update parentPath for the next iteration by using the current newPath
       }
     }
 
-    // console.log(JSON.stringify(happyData, null, "\t"));
-    //loop through the parent and child arrays and find the parents which aren't children.  set those to have a parent of "-", indicating that they're the top parent
+    // console.log(JSON.stringify(formattedData, null, "\t"));
+    // Loop through the parent and child arrays and find the parents which aren't children. Set those to have a parent of "-", indicating that they're the top parent
     parentsA.forEach((parent) => {
       if (!kidsA.includes(parent.toString())) {
         const noParent = {
@@ -83,25 +82,19 @@ var senseD3 = {
           parent: "[root]",
           parentpath: "[root] > " + parent.toString(),
         };
-        happyData.push(noParent);
+        formattedData.push(noParent);
       }
     });
 
-    console.log(happyData);
+    console.log(formattedData);
     //crawl through the data to create the family tree in JSON
     function getChildren(inputData, name = "[root]", parentPath = null, parentSize = 0) {
       var children = inputData
         .filter(function (d) {
           if (d.parentpath === parentPath + " > " + d.parent) {
-            if (d.leaf) {
-              return d.parent === name;
-            } else {
-              return d.parentpath === parentPath + " > " + d.parent;
-            }
+            return d.leaf ? d.parent === name : d.parentpath === parentPath + " > " + d.parent;
           } else {
-            if (!d.leaf) {
-              return d.parent === name;
-            }
+            return !d.leaf && d.parent === name;
           }
         })
 
@@ -142,7 +135,7 @@ var senseD3 = {
       return children;
     }
 
-    var JSONtree = getChildren(happyData);
+    var JSONtree = getChildren(formattedData);
     // console.log(JSON.stringify(JSONtree, null, "\t"));
     return JSONtree;
   },
