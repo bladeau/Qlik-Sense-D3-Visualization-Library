@@ -85,20 +85,24 @@ var senseD3 = {
 
     // Crawl through the data to create the family tree in JSON
     function getChildren(inputData, name = "[root]", parentPath = null, parentSize = 0) {
+      // Filter the inputData based on the parent-child relationship and create children array
       const children = inputData
         .filter(function (d) {
           if (d.parentpath === parentPath + " > " + d.parent) {
+            // Check if the current entry is a child of the specified parent
             return d.leaf ? d.parent === name : d.parentpath === parentPath + " > " + d.parent;
           } else {
+            // Handle the case when parentPath doesn't match, but it's not a leaf node and has the correct parent
             return !d.leaf && d.parent === name;
           }
         })
         .map(function (d) {
           let mapping;
           if (parentPath == null) {
-            parentPath = "[root]";
+            parentPath = "[root]"; // Set parentPath to "[root]" if it is null
           }
           if (d.leaf) {
+            // Create the mapping object for leaf nodes
             mapping = {
               id: parentPath + " > " + d.name,
               name: d.name,
@@ -108,12 +112,15 @@ var senseD3 = {
           } else {
             const childSize = d.size;
 
+            // Recursively call the getChildren function to create children for non-leaf nodes
             const childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
 
+            // Calculate the total size by summing up the sizes of all children
             const totalSize = childChildren.reduce(function (acc, child) {
               return acc + child.totalsize;
             }, 0);
 
+            // Create the mapping object for non-leaf nodes
             mapping = {
               id: parentPath + " > " + d.name,
               name: d.name,
@@ -130,6 +137,7 @@ var senseD3 = {
     }
 
     var JSONtree = getChildren(formattedData);
+
     // console.log(JSON.stringify(JSONtree, null, "\t"));
     return JSONtree;
   },
