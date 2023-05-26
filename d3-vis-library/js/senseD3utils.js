@@ -25,26 +25,21 @@ var senseD3 = {
     if (arguments.length == 1) {
       numDims = 2;
     }
-    var parentsA = []; // Array to store unique parent values
-    var kidsA = []; // Array to store unique child values
-    var formattedData = []; // Array to store the formatted data
+    const parentsA = []; // Array to store unique parent values
+    const kidsA = []; // Array to store unique child values
+    const formattedData = []; // Array to store the formatted data
 
-    for (var i = 0; i < dataSet.length; i++) {
-      var d = dataSet[i]; // Current node
+    for (let i = 0; i < dataSet.length; i++) {
+      const d = dataSet[i]; // Current node
 
-      var parentPath = "[root]"; // Initialize parentPath as [root] for the level under root
+      let parentPath = "[root]"; // Initialize parentPath as [root] for the level under root
 
-      for (var j = 0; j < numDims - 1; j++) {
+      for (let j = 0; j < numDims - 1; j++) {
         // Iterate through the dimensions except for the final level and measure
 
-        var parentVal = "";
-        if (!d[j].qText || d[j].qText === "-" || d[j].qText === "" || d[j].qText === " ") {
-          parentVal = "[root]"; // Set parent value as [root] if it is empty or contains special characters
-        } else {
-          parentVal = d[j].qText; // Set parent value as the current dimension value
-        }
+        let parentVal = d[j].qText;
 
-        var childVal = d[j + 1].qText; // Get the value of the next dimension (child value)
+        const childVal = d[j + 1].qText; // Get the value of the next dimension (child value)
 
         if (!parentsA.includes(parentVal)) {
           parentsA.push(parentVal); // Add parent value to the parentsA array if it doesn't exist already
@@ -54,12 +49,12 @@ var senseD3 = {
           kidsA.push(childVal); // Add child value to the kidsA array if it doesn't exist already
         }
 
-        var newPath = parentPath + " > " + parentVal; // Construct the complete path including parent and child values
+        const newPath = parentPath + " > " + parentVal; // Construct the complete path including parent and child values
         if (parentVal === "[root]") {
           newPath = parentVal; // Special case: if parent is [root], exclude it from the path
         }
 
-        var newDataSet = {
+        const newDataSet = {
           name: childVal,
           parent: parentVal,
           size: d[numDims].qNum, // Assign size as the value of the measure in the last dimension
@@ -87,9 +82,10 @@ var senseD3 = {
     });
 
     console.log(formattedData);
-    //crawl through the data to create the family tree in JSON
+
+    // Crawl through the data to create the family tree in JSON
     function getChildren(inputData, name = "[root]", parentPath = null, parentSize = 0) {
-      var children = inputData
+      const children = inputData
         .filter(function (d) {
           if (d.parentpath === parentPath + " > " + d.parent) {
             return d.leaf ? d.parent === name : d.parentpath === parentPath + " > " + d.parent;
@@ -97,9 +93,8 @@ var senseD3 = {
             return !d.leaf && d.parent === name;
           }
         })
-
         .map(function (d) {
-          var mapping;
+          let mapping;
           if (parentPath == null) {
             parentPath = "[root]";
           }
@@ -111,17 +106,16 @@ var senseD3 = {
               totalsize: d.size,
             };
           } else {
-            var childSize = d.size;
+            const childSize = d.size;
 
-            var childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
+            const childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
 
-            var totalSize = childChildren.reduce(function (acc, child) {
+            const totalSize = childChildren.reduce(function (acc, child) {
               return acc + child.totalsize;
             }, 0);
 
             mapping = {
               id: parentPath + " > " + d.name,
-              //  id: parentPath + "|" + d.name,
               name: d.name,
               size: childSize,
               totalsize: totalSize + parentSize,
