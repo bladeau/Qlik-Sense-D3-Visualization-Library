@@ -48,7 +48,9 @@ var senseD3 = {
         if (!kidsA.includes(childVal)) {
           kidsA.push(childVal); // Add child value to the kidsA array if it doesn't exist already
         }
+		const exists = formattedData.some(item => item.parent === parentVal && item.name === d[i + 1].qText); //Make sure it  does not already exist in formatted Array
 
+		if (!exists) {
         const newPath = parentPath + " > " + parentVal; // Construct the complete path including parent and child values
         if (parentVal === "[root]") {
           newPath = parentVal; // Special case: if parent is [root], exclude it from the path
@@ -63,7 +65,7 @@ var senseD3 = {
         };
 
         formattedData.push(newDataSet); // Add the new formatted data entry to formattedData
-
+    }
         parentPath = newPath; // Update parentPath for the next iteration by using the current newPath
       }
     }
