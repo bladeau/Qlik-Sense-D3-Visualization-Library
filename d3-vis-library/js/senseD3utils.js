@@ -118,63 +118,49 @@ var senseD3 = {
     console.log(JSON.stringify(formattedData, null, "\t"));
 
     // formatted data exists////////////////////////////////////
-
+    // Crawl through the data to create the family tree in JSON
     function getChildren(inputData, name = "[root]", parentPath = null, parentSize = 0) {
-      var children = inputData
-
+      // Filter the inputData based on the parent-child relationship and create children array
+      const children = inputData
         .filter(function (d) {
           if (d.parentpath === parentPath + " > " + d.parent) {
-            //console.log(d);
-
-            if (d.leaf) {
-              return d.parent === name;
-            } else {
-              return d.parentpath === parentPath + " > " + d.parent;
-            }
+            // Check if the current entry is a child of the specified parent
+            return d.leaf ? d.parent === name : d.parentpath === parentPath + " > " + d.parent;
           } else {
-            if (!d.leaf) {
-              return d.parent === name;
-            }
+            // Handle the case when parentPath doesn't match, but it's not a leaf node and has the correct parent
+            return !d.leaf && d.parent === name;
           }
         })
-
         .map(function (d) {
-          var mapping;
-
+          let mapping;
           if (parentPath == null) {
-            parentPath = "[root]";
+            parentPath = "[root]"; // Set parentPath to "[root]" if it is null
           }
-
           if (d.leaf) {
+            // Create the mapping object for leaf nodes
             mapping = {
-              d: d,
-
-              id: parentPath + " > " + d.parent + " > " + d.name,
-
+              id: parentPath + " > " + d.name,
               name: d.name,
-
               size: d.size,
-
               totalsize: d.size,
             };
           } else {
-            var childSize = d.size;
+            const childSize = d.size;
 
-            var childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
+            // Recursively call the getChildren function to create children for non-leaf nodes
+            const childChildren = getChildren(inputData, d.name, d.parentpath, childSize);
 
+            // Calculate the total size by summing up the sizes of all children
+            const totalSize = childChildren.reduce(function (acc, child) {
+              return acc + child.totalsize;
+            }, 0);
+
+            // Create the mapping object for non-leaf nodes
             mapping = {
-              d: d,
-
               id: parentPath + " > " + d.name,
-
-              //  id: parentPath + "|" + d.name,
-
               name: d.name,
-
               size: childSize,
-
-              totalsize: d.totalSize,
-
+              totalsize: totalSize + parentSize,
               children: childChildren,
             };
           }
@@ -185,30 +171,18 @@ var senseD3 = {
       return children;
     }
 
-    ////////////////////////////////////////////
-
-    // Example usage
-
     var JSONtree = getChildren(formattedData);
 
-    //console.log('-------------------2----------------------------');
-
-    //console.log(JSON.stringify(JSONtree, null, "\t"));
-
+    // console.log(JSON.stringify(JSONtree, null, "\t"));
     return JSONtree;
   },
-
   // Traverse the dataset to find the maximum value of a
-
   // specified attribute from all of the nodes in the passed dataset
-
   findMaxValue: function (attr, dataSet) {
     var maxValue = 0;
-
     dataSet.forEach(function (d) {
       maxValue = d[attr] > maxValue ? d[attr] : maxValue;
     });
-
     return maxValue;
   },
 };
